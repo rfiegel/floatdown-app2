@@ -1,0 +1,579 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Float-Down Analyzer (Saved Scenarios)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 18px; background:#fbfdff; color:#111; }
+    .card { background:#fff; border:1px solid #e6e6e6; border-radius:12px; padding:14px; margin:12px 0; box-shadow:0 1px 4px rgba(0,0,0,0.03); }
+    h1 { margin: 0 0 10px; font-size: 20px; }
+    h2 { margin: 0 0 10px; font-size: 16px; }
+    label { display:block; margin-top:10px; font-weight:700; font-size:13px; }
+    input, select { width:100%; margin-top:6px; padding:8px 10px; border:1px solid #ccc; border-radius:8px; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+    .row3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:14px; }
+    button { padding:10px 14px; border-radius:10px; border:1px solid #0b69ff; background:#0b69ff; color:#fff; cursor:pointer; }
+    button.ghost { background:#fff; color:#0b69ff; }
+    .small { font-size:12px; color:#555; margin-top:6px; }
+    .err { display:none; background:#fff1f2; border:1px solid #fecaca; color:#9f1239; padding:10px 12px; border-radius:10px; margin-top:12px; white-space:pre-wrap; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; background:#fff; }
+    th, td { border:1px solid #eef0f2; padding:8px; vertical-align:top; }
+    th { background:#fbfbfb; }
+    pre { white-space:pre-wrap; background:#f7f9fc; border:1px solid #e6eef8; border-radius:10px; padding:12px; max-height:280px; overflow:auto; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #e5e7eb; background:#f9fafb; }
+    .yes { background:#ecfdf5; border-color:#a7f3d0; color:#065f46; }
+    .no { background:#fff1f2; border-color:#fecaca; color:#9f1239; }
+    .good { background:#ecfdf5; }
+    .bad { background:#fff1f2; }
+    .best { outline:2px solid #0b69ff; outline-offset:-2px; }
+    .muted { color:#6b7280; font-size:12px; }
+    .nowrap { white-space:nowrap; }
+    .btnrow { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  </style>
+</head>
+<body>
+
+  <h1>Float-Down Analyzer (Saved Scenarios)</h1>
+  <div class="small">
+    Lender credit is entered as % (points). Δ Price is shown as price points (e.g. 0.185). Δ Upfront is $ change vs baseline points/credit.
+  </div>
+
+  <div id="errorBox" class="err"></div>
+
+  <div class="card" id="scenarioCard">
+    <h2>Saved Scenarios</h2>
+    <label>Borrower / Scenario Name</label>
+    <input id="scenarioName" type="text" placeholder="e.g., Smith Refi">
+
+    <label style="margin-top:10px;">Saved List</label>
+    <select id="scenarioList"></select>
+
+    <div class="btnrow">
+      <button id="saveScenario" class="ghost">Save</button>
+      <button id="loadScenario" class="ghost">Load</button>
+      <button id="deleteScenario" class="ghost">Delete</button>
+      <button id="newScenario" class="ghost">Clear Form</button>
+    </div>
+
+    <div class="small">Saved locally on this device/browser (Safari storage). Clearing website data wipes saves.</div>
+  </div>
+
+  <div class="card">
+    <h2>Baseline</h2>
+    <div class="row">
+      <div>
+        <label>Original Rate (%)</label>
+        <input id="orig_rate" type="number" step="0.001" placeholder="6.490">
+
+        <label>Original Price</label>
+        <input id="orig_price" type="number" step="0.001" placeholder="99.468">
+
+        <label>Discount Points (%)</label>
+        <input id="orig_points" type="number" step="0.001" placeholder="0.157">
+
+        <label>Lender Credit (%)</label>
+        <input id="orig_credit_pct" type="number" step="0.001" placeholder="0.250">
+
+        <label>Loan Amount ($)</label>
+        <input id="loan_amount" type="number" step="1000" placeholder="933750">
+      </div>
+
+      <div>
+        <h2>PITIA (monthly)</h2>
+        <label>Loan Term (years)</label>
+        <input id="term_years" type="number" value="30">
+
+        <label>Monthly Property Tax ($)</label>
+        <input id="tax_mo" type="number" value="0">
+
+        <label>Monthly Hazard Insurance ($)</label>
+        <input id="hazard_mo" type="number" value="0">
+
+        <label>Monthly Mortgage Insurance (MI) ($)</label>
+        <input id="mi_mo" type="number" value="0">
+
+        <label>Monthly HOA ($)</label>
+        <input id="hoa_mo" type="number" value="0">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>New Pricing (3 options)</h2>
+    <div class="row3">
+      <div>
+        <label>Option A (Current) Rate</label>
+        <input id="A_rate" type="number" step="0.001" placeholder="6.490">
+        <label>Option A Price</label>
+        <input id="A_price" type="number" step="0.001" placeholder="99.578">
+      </div>
+      <div>
+        <label>Option B (Lower #1) Rate</label>
+        <input id="B_rate" type="number" step="0.001" placeholder="6.375">
+        <label>Option B Price</label>
+        <input id="B_price" type="number" step="0.001" placeholder="99.412">
+      </div>
+      <div>
+        <label>Option C (Lower #2) Rate</label>
+        <input id="C_rate" type="number" step="0.001" placeholder="6.250">
+        <label>Option C Price</label>
+        <input id="C_price" type="number" step="0.001" placeholder="99.300">
+      </div>
+    </div>
+
+    <div class="btnrow">
+      <button id="analyzeBtn">Analyze</button>
+      <button id="exportCsvBtn" class="ghost">Export CSV</button>
+      <button id="copyAuditBtn" class="ghost">Copy Audit</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Results</h2>
+    <div id="results">(click Analyze)</div>
+
+    <h2 style="margin-top:14px;">Audit</h2>
+    <pre id="audit">(audit will appear here)</pre>
+  </div>
+
+<script>
+(() => {
+  // -----------------------------
+  // Error surface (no more "blank")
+  // -----------------------------
+  const errorBox = document.getElementById("errorBox");
+  function showError(msg) {
+    console.error(msg);
+    errorBox.style.display = "block";
+    errorBox.textContent = msg;
+  }
+  function clearError() {
+    errorBox.style.display = "none";
+    errorBox.textContent = "";
+  }
+  window.addEventListener("error", (e) => {
+    showError("JavaScript error: " + (e.message || "unknown") + (e.lineno ? (" (line " + e.lineno + ")") : ""));
+  });
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  const $ = (id) => document.getElementById(id);
+  const round3 = (x) => Math.round(x * 1000) / 1000;
+  const round2 = (x) => Math.round(x * 100) / 100;
+  const fmtMoney = (x) => Number(x).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pctToDollars = (loan, pct) => loan * (pct / 100);
+
+  const signedMoney = (delta) => (delta >= 0 ? "+$" : "-$") + fmtMoney(Math.abs(delta));
+
+  function monthlyPI(loanAmount, annualRatePct, termYears) {
+    if (!loanAmount || !annualRatePct || !termYears) return 0;
+    const r = annualRatePct / 100 / 12;
+    const n = termYears * 12;
+    if (r === 0) return loanAmount / n;
+    return (r * loanAmount) / (1 - Math.pow(1 + r, -n));
+  }
+
+  function netUpfront(points$, credit$) {
+    return Math.max(0, points$) - Math.max(0, credit$);
+  }
+
+  function breakevenMonths(extraUpfront$, monthlySavings$) {
+    if (extraUpfront$ <= 0) return "Immediate";
+    if (monthlySavings$ <= 0) return "No break-even";
+    const m = extraUpfront$ / monthlySavings$;
+    return `${Math.ceil(m)} mo (~${round2(m / 12)} yrs)`;
+  }
+
+  function classFromDelta(delta) {
+    // delta = new - original; negative is good
+    if (delta < -0.01) return "good";
+    if (delta > 0.01) return "bad";
+    return "";
+  }
+
+  // -----------------------------
+  // Pricing math
+  // -----------------------------
+  // baseline points% and credit% -> net points; apply deltaPrice; split into new points or new credit
+  function applyPriceDeltaToPointsAndCredit(b, deltaPrice) {
+    const startPts = Math.max(0, b.orig_points);
+    const startCreditPct = Math.max(0, b.orig_credit_pct);
+
+    const netStartPts = startPts - startCreditPct;   // +cost, -credit
+    const netNewPts = netStartPts - deltaPrice;      // better price reduces cost
+
+    let newPts = 0, newCreditPct = 0;
+    if (netNewPts >= 0) newPts = netNewPts;
+    else newCreditPct = Math.abs(netNewPts);
+
+    return {
+      origPts: startPts,
+      origPts$: pctToDollars(b.loan_amount, startPts),
+      origCreditPct: startCreditPct,
+      origCredit$: pctToDollars(b.loan_amount, startCreditPct),
+
+      newPts,
+      newPts$: pctToDollars(b.loan_amount, newPts),
+      newCreditPct,
+      newCredit$: pctToDollars(b.loan_amount, newCreditPct)
+    };
+  }
+
+  function evaluateOption(b, label, rate, price) {
+    const deltaPrice = price - b.orig_price;      // price points (e.g. 0.185)
+    const eligible = deltaPrice > 0;
+
+    const adj = applyPriceDeltaToPointsAndCredit(b, deltaPrice);
+
+    const baselineUpfront$ = netUpfront(adj.origPts$, adj.origCredit$);
+    const optionUpfront$ = netUpfront(adj.newPts$, adj.newCredit$);
+    const deltaUpfront$ = optionUpfront$ - baselineUpfront$; // what you requested to show
+
+    const pi = monthlyPI(b.loan_amount, rate, b.term_years);
+    const pitia = pi + b.tax_mo + b.hazard_mo + b.mi_mo + b.hoa_mo;
+
+    return { label, rate, price, deltaPrice, eligible, adj, baselineUpfront$, optionUpfront$, deltaUpfront$, pi, pitia };
+  }
+
+  // -----------------------------
+  // Scenario save/load (localStorage)
+  // -----------------------------
+  const STORAGE_PREFIX = "fd_scenario_";
+  const FIELD_IDS = [
+    "orig_rate","orig_price","orig_points","orig_credit_pct","loan_amount",
+    "term_years","tax_mo","hazard_mo","mi_mo","hoa_mo",
+    "A_rate","A_price","B_rate","B_price","C_rate","C_price"
+  ];
+
+  function getFormData() {
+    const data = {};
+    for (const id of FIELD_IDS) data[id] = $(id).value ?? "";
+    return data;
+  }
+  function setFormData(data) {
+    for (const id of FIELD_IDS) if (id in data) $(id).value = data[id];
+  }
+  function clearForm() {
+    for (const id of FIELD_IDS) $(id).value = "";
+    $("term_years").value = "30";
+    $("tax_mo").value = "0";
+    $("hazard_mo").value = "0";
+    $("mi_mo").value = "0";
+    $("hoa_mo").value = "0";
+    $("results").textContent = "(click Analyze)";
+    $("audit").textContent = "(audit will appear here)";
+  }
+
+  function listScenarioNames() {
+    return Object.keys(localStorage)
+      .filter(k => k.startsWith(STORAGE_PREFIX))
+      .map(k => k.replace(STORAGE_PREFIX, ""))
+      .sort((a,b) => a.localeCompare(b));
+  }
+
+  function refreshScenarioList() {
+    const sel = $("scenarioList");
+    sel.innerHTML = "";
+    const names = listScenarioNames();
+    for (const name of names) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    }
+  }
+
+  function saveScenario() {
+    const name = $("scenarioName").value.trim();
+    if (!name) return alert("Enter a borrower/scenario name first.");
+    localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(getFormData()));
+    refreshScenarioList();
+    $("scenarioList").value = name;
+    alert("Saved scenario: " + name);
+  }
+
+  function loadScenario() {
+    const name = $("scenarioList").value;
+    if (!name) return alert("No saved scenarios yet.");
+    const raw = localStorage.getItem(STORAGE_PREFIX + name);
+    if (!raw) return alert("Scenario not found.");
+    const data = JSON.parse(raw);
+    setFormData(data);
+    $("scenarioName").value = name;
+    alert("Loaded scenario: " + name);
+  }
+
+  function deleteScenario() {
+    const name = $("scenarioList").value;
+    if (!name) return;
+    if (!confirm("Delete scenario: " + name + " ?")) return;
+    localStorage.removeItem(STORAGE_PREFIX + name);
+    refreshScenarioList();
+    alert("Deleted.");
+  }
+
+  // -----------------------------
+  // Analyze + render
+  // -----------------------------
+  let last = null;
+
+  function analyze() {
+    try {
+      clearError();
+
+      const b = {
+        orig_rate: Number($("orig_rate").value || 0),
+        orig_price: Number($("orig_price").value || 0),
+        orig_points: Number($("orig_points").value || 0),
+        orig_credit_pct: Number($("orig_credit_pct").value || 0),
+        loan_amount: Number($("loan_amount").value || 0),
+        term_years: Number($("term_years").value || 30),
+        tax_mo: Number($("tax_mo").value || 0),
+        hazard_mo: Number($("hazard_mo").value || 0),
+        mi_mo: Number($("mi_mo").value || 0),
+        hoa_mo: Number($("hoa_mo").value || 0),
+      };
+
+      if (!b.orig_rate || !b.orig_price || !b.loan_amount) {
+        $("results").innerHTML = `<div class="small">Enter Original Rate, Original Price, and Loan Amount.</div>`;
+        return;
+      }
+
+      const opts = [];
+      const A = { rate: Number($("A_rate").value || 0), price: Number($("A_price").value || 0) };
+      const B = { rate: Number($("B_rate").value || 0), price: Number($("B_price").value || 0) };
+      const C = { rate: Number($("C_rate").value || 0), price: Number($("C_price").value || 0) };
+
+      if (A.rate && A.price) opts.push(["A - Current", A.rate, A.price]);
+      if (B.rate && B.price) opts.push(["B - Lower #1", B.rate, B.price]);
+      if (C.rate && C.price) opts.push(["C - Lower #2", C.rate, C.price]);
+
+      if (!opts.length) {
+        $("results").innerHTML = `<div class="small">Enter at least Option A.</div>`;
+        return;
+      }
+
+      const evals = opts.map(([label, rate, price]) => evaluateOption(b, label, rate, price));
+
+      const current = evals.find(e => Math.abs(e.rate - b.orig_rate) < 0.0005) || evals[0];
+      const best = [...evals].sort((x,y) => (x.pitia - y.pitia) || (x.deltaUpfront$ - y.deltaUpfront$))[0];
+
+      // baseline display uses current.adj's orig values (same baseline concept)
+      const baseAdj = current.adj;
+
+      let html = `
+        <div class="small">
+          Baseline: Points ${round3(baseAdj.origPts)}% ($${fmtMoney(baseAdj.origPts$)}) |
+          Credit ${round3(baseAdj.origCreditPct)}% ($${fmtMoney(baseAdj.origCredit$)})
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Option</th>
+              <th>Rate</th>
+              <th>Price</th>
+              <th>Eligible?</th>
+              <th>Δ Price (pts)</th>
+
+              <th>Orig Pts %</th>
+              <th>Orig Pts $</th>
+              <th>Orig Credit %</th>
+              <th>Orig Credit $</th>
+
+              <th>New Pts %</th>
+              <th>New Pts $</th>
+              <th>New Credit %</th>
+              <th>New Credit $</th>
+
+              <th>Δ Upfront ($)</th>
+              <th>Original → New Payment</th>
+
+              <th>Break-even (PI)</th>
+              <th>Break-even (PITIA)</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      for (const e of evals) {
+        const origPI = current.pi;
+        const origPITIA = current.pitia;
+
+        const deltaPI = e.pi - origPI;
+        const deltaPITIA = e.pitia - origPITIA;
+
+        const savingsPI = origPI - e.pi;
+        const savingsPITIA = origPITIA - e.pitia;
+
+        const bePI = breakevenMonths(e.deltaUpfront$, savingsPI);
+        const bePITIA = breakevenMonths(e.deltaUpfront$, savingsPITIA);
+
+        const eligPill = e.eligible ? `<span class="pill yes">Yes</span>` : `<span class="pill no">No</span>`;
+        const rowClass = (e === best) ? "best" : "";
+
+        const upfrontClass = classFromDelta(e.deltaUpfront$);
+        const payClass = classFromDelta(deltaPITIA);
+
+        html += `
+          <tr class="${rowClass}">
+            <td>${e.label}${e === best ? ` <span class="pill">Best</span>` : ""}</td>
+            <td class="nowrap">${round3(e.rate)}%</td>
+            <td class="nowrap">${round3(e.price)}</td>
+            <td>${eligPill}</td>
+            <td class="nowrap">${e.deltaPrice >= 0 ? "+" : ""}${round3(e.deltaPrice)}</td>
+
+            <td class="nowrap">${round3(baseAdj.origPts)}</td>
+            <td class="nowrap">$${fmtMoney(baseAdj.origPts$)}</td>
+            <td class="nowrap">${round3(baseAdj.origCreditPct)}</td>
+            <td class="nowrap">$${fmtMoney(baseAdj.origCredit$)}</td>
+
+            <td class="nowrap">${round3(e.adj.newPts)}</td>
+            <td class="nowrap">$${fmtMoney(e.adj.newPts$)}</td>
+            <td class="nowrap">${round3(e.adj.newCreditPct)}</td>
+            <td class="nowrap">$${fmtMoney(e.adj.newCredit$)}</td>
+
+            <td class="nowrap ${upfrontClass}"><b>${signedMoney(e.deltaUpfront$)}</b></td>
+
+            <td class="${payClass}">
+              <div><b>PI</b>: $${fmtMoney(origPI)} → $${fmtMoney(e.pi)} <span class="muted">(${signedMoney(deltaPI)})</span></div>
+              <div><b>PITIA</b>: $${fmtMoney(origPITIA)} → $${fmtMoney(e.pitia)} <span class="muted">(${signedMoney(deltaPITIA)})</span></div>
+            </td>
+
+            <td class="nowrap">${bePI}</td>
+            <td class="nowrap">${bePITIA}</td>
+          </tr>
+        `;
+      }
+
+      html += `</tbody></table>`;
+      $("results").innerHTML = html;
+
+      // audit
+      const lines = [];
+      const scen = $("scenarioName").value.trim();
+      lines.push("FLOAT-DOWN AUDIT");
+      lines.push("-----------------");
+      if (scen) lines.push("Scenario: " + scen);
+      lines.push(`Baseline: Rate ${round3(b.orig_rate)}% | Price ${round3(b.orig_price)} | Loan $${fmtMoney(b.loan_amount)} | Term ${b.term_years} yrs`);
+      lines.push(`Orig Points: ${round3(baseAdj.origPts)}% ($${fmtMoney(baseAdj.origPts$)})`);
+      lines.push(`Orig Credit: ${round3(baseAdj.origCreditPct)}% ($${fmtMoney(baseAdj.origCredit$)})`);
+      lines.push(`PITIA inputs (monthly): Tax $${fmtMoney(b.tax_mo)} | Hazard $${fmtMoney(b.hazard_mo)} | MI $${fmtMoney(b.mi_mo)} | HOA $${fmtMoney(b.hoa_mo)}`);
+      lines.push("");
+      lines.push(`Current reference: ${current.label} @ ${round3(current.rate)}%`);
+      lines.push(`Best: ${best.label} @ ${round3(best.rate)}%`);
+      lines.push("");
+
+      for (const e of evals) {
+        lines.push(`${e.label}: Rate ${round3(e.rate)}% | Price ${round3(e.price)} | Eligible: ${e.eligible ? "YES" : "NO"} | Δ price ${e.deltaPrice>=0?"+":""}${round3(e.deltaPrice)} pts`);
+        lines.push(`  New Points: ${round3(e.adj.newPts)}% ($${fmtMoney(e.adj.newPts$)})`);
+        lines.push(`  New Credit: ${round3(e.adj.newCreditPct)}% ($${fmtMoney(e.adj.newCredit$)})`);
+        lines.push(`  Δ Upfront: ${signedMoney(e.deltaUpfront$)} (baseline $${fmtMoney(e.baselineUpfront$)} → option $${fmtMoney(e.optionUpfront$)})`);
+        lines.push(`  Payment: PI $${fmtMoney(current.pi)} → $${fmtMoney(e.pi)} | PITIA $${fmtMoney(current.pitia)} → $${fmtMoney(e.pitia)}`);
+        lines.push("");
+      }
+
+      $("audit").textContent = lines.join("\n");
+      last = { b, evals, current, best, baseAdj, scenario: scen };
+    } catch (err) {
+      showError("Analyze error: " + (err && err.message ? err.message : String(err)));
+    }
+  }
+
+  // -----------------------------
+  // CSV export
+  // -----------------------------
+  function arrayToCsv(rows) {
+    return rows.map(r => r.map(c => {
+      const s = String(c ?? "");
+      if (s.includes(",") || s.includes("\n") || s.includes('"')) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }).join(",")).join("\n");
+  }
+
+  function exportCsv() {
+    try {
+      if (!last) return alert("Run Analyze first.");
+      const rows = [];
+      rows.push([
+        "Scenario","Option","Rate","Price","Eligible","DeltaPrice_pts",
+        "OrigPtsPct","OrigPts$","OrigCreditPct","OrigCredit$",
+        "NewPtsPct","NewPts$","NewCreditPct","NewCredit$",
+        "DeltaUpfront$",
+        "OrigPI","NewPI","OrigPITIA","NewPITIA",
+        "BreakEvenPI","BreakEvenPITIA"
+      ]);
+
+      for (const e of last.evals) {
+        const origPI = last.current.pi;
+        const origPITIA = last.current.pitia;
+        const savingsPI = origPI - e.pi;
+        const savingsPITIA = origPITIA - e.pitia;
+
+        rows.push([
+          last.scenario || "",
+          e.label, round3(e.rate), round3(e.price), e.eligible ? "Yes" : "No", round3(e.deltaPrice),
+          round3(last.baseAdj.origPts), round2(last.baseAdj.origPts$),
+          round3(last.baseAdj.origCreditPct), round2(last.baseAdj.origCredit$),
+          round3(e.adj.newPts), round2(e.adj.newPts$),
+          round3(e.adj.newCreditPct), round2(e.adj.newCredit$),
+          round2(e.deltaUpfront$),
+          round2(origPI), round2(e.pi),
+          round2(origPITIA), round2(e.pitia),
+          breakevenMonths(e.deltaUpfront$, savingsPI),
+          breakevenMonths(e.deltaUpfront$, savingsPITIA)
+        ]);
+      }
+
+      const csv = arrayToCsv(rows);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `floatdown_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showError("CSV export error: " + (err && err.message ? err.message : String(err)));
+    }
+  }
+
+  // -----------------------------
+  // Clipboard
+  // -----------------------------
+  async function copyAudit() {
+    const txt = $("audit").textContent || "";
+    if (!txt.trim()) return alert("Run Analyze first.");
+    try {
+      await navigator.clipboard.writeText(txt);
+      alert("Audit copied.");
+    } catch {
+      alert("Clipboard blocked. Tap/hold in the audit box and copy, or use Ctrl+C on a computer.");
+    }
+  }
+
+  // -----------------------------
+  // Wire up
+  // -----------------------------
+  $("analyzeBtn").addEventListener("click", analyze);
+  $("exportCsvBtn").addEventListener("click", exportCsv);
+  $("copyAuditBtn").addEventListener("click", copyAudit);
+
+  $("saveScenario").addEventListener("click", saveScenario);
+  $("loadScenario").addEventListener("click", loadScenario);
+  $("deleteScenario").addEventListener("click", deleteScenario);
+  $("newScenario").addEventListener("click", () => {
+    if (confirm("Clear all fields (does not delete saved scenarios)?")) clearForm();
+  });
+
+  refreshScenarioList();
+
+})();
+</script>
+
+</body>
+</html>
